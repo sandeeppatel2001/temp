@@ -352,7 +352,7 @@ router.post("/upload-chunk", auth, uploadMiddleware, async (req, res) => {
     );
 
     if (isComplete) {
-      console.log("isComplete----------------2");
+      console.log("isComplete----------------true");
       try {
         const finalPath = await chunkManager.combineChunks(uploadId);
         console.log("finalPath----------------", finalPath);
@@ -375,6 +375,7 @@ router.post("/upload-chunk", auth, uploadMiddleware, async (req, res) => {
         };
         console.log("videodata", videodata);
         if (videoInfo.type === "reel") {
+          console.log("reel");
           const chunkData = await fs.readFile(finalPath);
           thumbnailUrl = await createThumbnailFromBuffer(
             chunkData,
@@ -390,11 +391,25 @@ router.post("/upload-chunk", auth, uploadMiddleware, async (req, res) => {
           isComplete,
           progress: 100,
         });
-        await Promise.all(
-          targetQualities.map((quality) =>
-            processFileToHLS(finalPath, uploadId, quality, metadata)
-          )
-        );
+        // await Promise.all(
+        //   targetQualities.map((quality) =>
+        //     processFileToHLS(finalPath, uploadId, quality, metadata)
+        //   )
+        // );
+        if (targetQualities.length > 3) {
+          await processFileToHLS(
+            finalPath,
+            uploadId,
+            targetQualities[2],
+            metadata
+          );
+          // remove the 3rd quality from targetQualities
+          targetQualities.splice(2, 1);
+        }
+
+        for (const quality of targetQualities) {
+          await processFileToHLS(finalPath, uploadId, quality, metadata);
+        }
         console.log("processFileToHLS done going to cleanup");
         await chunkManager.cleanup(uploadId);
         console.log("cleanup done");
@@ -414,10 +429,10 @@ router.post("/upload-chunk", auth, uploadMiddleware, async (req, res) => {
   } catch (error) {
     console.log("error in upload-chunk", error);
     logger.error("Chunk upload failed:", error);
-    res.status(500).json({
-      error: "Chunk upload failed",
-      details: error.message,
-    });
+    // res.status(500).json({
+    //   error: "Chunk upload failed",
+    //   details: error.message,
+    // });
   }
 });
 

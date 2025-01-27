@@ -2,11 +2,11 @@ const ffmpeg = require("../config/ffmpeg");
 const path = require("path");
 const fs = require("fs").promises;
 const logger = require("../config/logger");
-const { uploadToS3 } = require("./s3Upload");
+const { uploadChunkToS3 } = require("./s3Upload");
 const os = require("os");
 
 async function processFileToHLS(inputPath, videoId, quality, metadata) {
-  console.log("processFileToHLS----------------", inputPath);
+  console.log("processFileToHLS----------------", quality, inputPath);
   const outputDir = path.join(
     __dirname,
     "../tempvideos",
@@ -72,10 +72,10 @@ async function processFileToHLS(inputPath, videoId, quality, metadata) {
           const files = await fs.readdir(outputDir);
           for (const file of files) {
             const fileBuffer = await fs.readFile(path.join(outputDir, file));
-            await uploadToS3(
+            await uploadChunkToS3(
               process.env.AWS_BUCKET1,
-              fileBuffer,
-              `videos/${videoId}/${quality.resolution}/${file}`
+              `videos/${videoId}/${quality.resolution}/${file}`,
+              fileBuffer
             );
           }
           await fs.rm(outputDir, { recursive: true, force: true });
@@ -136,10 +136,10 @@ async function processBufferToHLS(buffer, videoId, quality) {
           const files = await fs.readdir(outputDir);
           for (const file of files) {
             const fileBuffer = await fs.readFile(path.join(outputDir, file));
-            await uploadToS3(
+            await uploadChunkToS3(
               process.env.AWS_BUCKET1,
-              fileBuffer,
-              `videos/${videoId}/${quality.resolution}/${file}`
+              `videos/${videoId}/${quality.resolution}/${file}`,
+              fileBuffer
             );
           }
           await fs.rm(outputDir, { recursive: true, force: true });

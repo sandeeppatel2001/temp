@@ -1,7 +1,7 @@
 const ffmpeg = require("fluent-ffmpeg");
 const { PassThrough } = require("stream");
 const logger = require("../config/logger");
-const { uploadToS3 } = require("./s3Upload");
+const { uploadChunkToS3 } = require("./s3Upload");
 const fs = require("fs").promises;
 const path = require("path");
 const os = require("os");
@@ -31,10 +31,10 @@ async function createThumbnailFromBuffer(buffer, videoId, type) {
         .on("end", async () => {
           try {
             const thumbBuffer = await fs.readFile(tempThumbPath);
-            const s3Response = await uploadToS3(
+            const s3Response = await uploadChunkToS3(
               process.env.AWS_BUCKET2,
-              thumbBuffer,
-              `videos/${videoId}/thumbnail.jpg`
+              `videos/${videoId}/thumbnail.jpg`,
+              thumbBuffer
             );
 
             // Cleanup temporary files
